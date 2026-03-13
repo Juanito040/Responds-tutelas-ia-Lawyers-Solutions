@@ -1,0 +1,51 @@
+# ─── DEPENDENCIAS ────────────────────────────────────────────────────────────
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ─── ENTORNO — NUNCA COMMITEAR (git-clean skill) ─────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ─── NEXT.JS ─────────────────────────────────────────────────────────────────
+/.next/
+/out/
+/build
+
+# ─── PRISMA GENERATED ────────────────────────────────────────────────────────
+/src/generated/
+
+# ─── TESTING ─────────────────────────────────────────────────────────────────
+/coverage
+.coverage
+.pytest_cache/
+
+# ─── LOGS ────────────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+/logs
+
+# ─── OS Y EDITORES ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# ─── SECRETOS Y CERTIFICADOS ─────────────────────────────────────────────────
+*.pem
+*.key
+*.cert
+secrets/
+
+# ─── TYPESCRIPT ──────────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── VERCEL ──────────────────────────────────────────────────────────────────
+.vercel

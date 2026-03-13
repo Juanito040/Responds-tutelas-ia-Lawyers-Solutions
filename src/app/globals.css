@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+
+@layer base {
+  :root {
+    --color-primary:    #2C3E50;
+    --color-accent:     #C0392B;
+    --color-success:    #27AE60;
+    --color-warning:    #F39C12;
+    --color-danger:     #C0392B;
+    --color-background: #FDFCFB;
+    --color-surface:    #FFFFFF;
+    --color-border:     #E5E7EB;
+    --color-muted:      #6B7280;
+    --color-text:       #2C3E50;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-primary);
+  }
+
+  /* Focus visible para accesibilidad — frontend-quality skill */
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Botones — sistema completo con todos los estados */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded font-medium text-sm
+           transition-all duration-200 cursor-pointer select-none
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply btn bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700; }
+  .btn-accent  { @apply btn bg-accent-500 text-white hover:bg-accent-700; }
+  .btn-outline { @apply btn border border-primary-500 text-primary-500 hover:bg-primary-50; }
+  .btn-ghost   { @apply btn text-primary-500 hover:bg-primary-50; }
+  .btn-danger  { @apply btn bg-accent-500 text-white hover:bg-accent-700; }
+  .btn-sm      { @apply text-xs px-3 py-1; }
+  .btn-lg      { @apply text-base px-6 py-3; }
+
+  /* Inputs — todos los estados definidos */
+  .input {
+    @apply w-full px-3 py-2 rounded border border-border bg-white text-sm
+           placeholder-muted transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+           disabled:bg-gray-50 disabled:cursor-not-allowed;
+  }
+  .input-error { @apply input border-accent-500 focus:ring-accent-500; }
+  .label       { @apply block text-sm font-medium text-primary-500 mb-1; }
+  .error-msg   { @apply text-xs text-accent-500 mt-1; }
+
+  /* Cards */
+  .card        { @apply bg-white rounded-lg border border-border shadow p-4; }
+  .card-header { @apply border-b border-border pb-3 mb-3; }
+
+  /* Badges de estado de tutelas */
+  .badge          { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold; }
+  .badge-pending  { @apply badge bg-yellow-100 text-yellow-800; }
+  .badge-progress { @apply badge bg-blue-100 text-blue-800; }
+  .badge-done     { @apply badge bg-green-100 text-green-800; }
+  .badge-urgent   { @apply badge bg-red-100 text-red-700; }
+  .badge-expired  { @apply badge bg-gray-100 text-gray-500; }
+
+  /* Páginas */
+  .page-title    { @apply text-2xl font-bold text-primary-500; }
+  .page-subtitle { @apply text-sm text-muted mt-1; }
+
+  /* Alertas UI */
+  .alert         { @apply flex items-start gap-3 p-3 rounded-md border text-sm; }
+  .alert-error   { @apply alert bg-red-50 border-red-200 text-red-800; }
+  .alert-success { @apply alert bg-green-50 border-green-200 text-green-800; }
+  .alert-warning { @apply alert bg-yellow-50 border-yellow-200 text-yellow-800; }
+  .alert-info    { @apply alert bg-blue-50 border-blue-200 text-blue-800; }
+}
