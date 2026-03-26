@@ -39,14 +39,14 @@ export async function POST(request, { params }) {
         casoId:        caso.id,
         contenido,
         generadoPorIA: true,
-        modeloIA:      "gemini-1.5-flash",
+        modeloIA:      "llama-3.3-70b-versatile",
         tokensUsados,
         version:       1,
       },
       update: {
         contenido,
         tokensUsados,
-        modeloIA: "gemini-1.5-flash",
+        modeloIA: "llama-3.3-70b-versatile",
         version:  { increment: 1 },
       },
     });
@@ -66,19 +66,24 @@ export async function POST(request, { params }) {
   } catch (error) {
     console.error("[POST /api/casos/:id/generar-contestacion]", error);
 
-    // Diferenciar error de Gemini vs error interno
-    const isGeminiError = error.message?.includes("API") || error.message?.includes("quota");
+    // Diferenciar tipo de error de Gemini
+    const isRateLimit = error.status === 429 || error.message?.includes("Too Many Requests") || error.message?.includes("quota");
+    const isGeminiError = error.message?.includes("GoogleGenerativeAI") || error.message?.includes("API");
+
+    let message = "Error interno del servidor";
+    let code = "SERVER_ERROR";
+
+    if (isRateLimit) {
+      code = "RATE_LIMIT";
+      message = "Límite de solicitudes a la IA alcanzado. Espera un momento e intenta nuevamente.";
+    } else if (isGeminiError) {
+      code = "AI_ERROR";
+      message = "Error al conectar con el servicio de IA. Verifica la configuración e intenta nuevamente.";
+    }
+
     return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code:    isGeminiError ? "AI_ERROR" : "SERVER_ERROR",
-          message: isGeminiError
-            ? "Error al conectar con el servicio de IA. Intenta nuevamente."
-            : "Error interno del servidor",
-        },
-      },
-      { status: 502 }
+      { success: false, error: { code, message } },
+      { status: isRateLimit ? 429 : 502 }
     );
   }
 }

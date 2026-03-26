@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PlusCircle, Search, Filter } from "lucide-react";
+import { signOut } from "next-auth/react";
 import DiasRestantesBadge from "@/components/ui/DiasRestantesBadge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EmptyState from "@/components/ui/EmptyState";
@@ -22,18 +23,27 @@ export default function CasosPage() {
 
   const fetchCasos = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page, per_page: 20 });
-    if (search) params.set("search", search);
-    if (estado) params.set("estado", estado);
-    if (tipo)   params.set("tipo", tipo);
+    try {
+      const params = new URLSearchParams({ page, per_page: 20 });
+      if (search) params.set("search", search);
+      if (estado) params.set("estado", estado);
+      if (tipo)   params.set("tipo", tipo);
 
-    const res  = await fetch(`/api/casos?${params}`);
-    const data = await res.json();
-    if (data.success) {
-      setCasos(data.data);
-      setPag(data.pagination);
+      const res = await fetch(`/api/casos?${params}`);
+      if (res.status === 401) {
+        signOut({ callbackUrl: "/login" });
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        setCasos(data.data);
+        setPag(data.pagination);
+      }
+    } catch {
+      // error de red — spinner se detiene, lista queda vacía
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [page, search, estado, tipo]);
 
   useEffect(() => { fetchCasos(); }, [fetchCasos]);
@@ -50,7 +60,7 @@ export default function CasosPage() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <Search className="absolute left-1 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
             <input
               type="text"
               placeholder="Buscar por accionante, accionado o radicado..."

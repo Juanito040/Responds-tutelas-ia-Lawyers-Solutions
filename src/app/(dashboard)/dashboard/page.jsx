@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* Saludo */}
       <div>
-        <h2 className="page-title">Bienvenida, {session.user.name?.split(" ")[0]}</h2>
+        <h2 className="page-title">Bienvenid@, {session.user.name?.split(" ")[0]}</h2>
         <p className="page-subtitle">
           {new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
         </p>

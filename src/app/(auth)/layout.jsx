@@ -11,9 +11,7 @@ export default function AuthLayout({ children }) {
             <Scale className="w-8 h-8 text-primary-500" />
           </div>
           <h1 className="text-2xl font-bold text-white">TutelaIA</h1>
-          <p className="text-primary-200 text-sm mt-1">
-            Contestación de tutelas con Inteligencia Artificial
-          </p>
+        
         </div>
 
         {/* Card de formulario */}

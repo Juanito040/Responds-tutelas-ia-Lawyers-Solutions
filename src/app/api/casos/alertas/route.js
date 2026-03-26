@@ -1,4 +1,5 @@
 // GET /api/casos/alertas — casos urgentes del usuario (≤3 días hábiles)
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

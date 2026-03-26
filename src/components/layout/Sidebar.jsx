@@ -1,7 +1,8 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Scale, LayoutDashboard, FolderOpen, PlusCircle, LogOut } from "lucide-react";
+import { Scale, LayoutDashboard, FolderOpen, PlusCircle, LogOut, Loader2 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const NAV = [
@@ -12,6 +13,12 @@ const NAV = [
 
 export default function Sidebar({ user }) {
   const pathname = usePathname();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await signOut({ callbackUrl: "/login" });
+  }
 
   return (
     <aside className="w-64 bg-primary-500 flex flex-col shrink-0 hidden md:flex">
@@ -55,11 +62,15 @@ export default function Sidebar({ user }) {
           <p className="text-primary-300 text-xs truncate">{user?.email}</p>
         </div>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-primary-200 hover:bg-white/10 hover:text-white transition-colors"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-primary-200 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="w-4 h-4" aria-hidden />
-          Cerrar sesión
+          {loggingOut
+            ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+            : <LogOut className="w-4 h-4" aria-hidden />
+          }
+          {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
         </button>
       </div>
     </aside>

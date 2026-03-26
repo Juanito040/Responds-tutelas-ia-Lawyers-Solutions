@@ -1,12 +1,11 @@
 // Configuración NextAuth — api-quality skill: autenticación robusta
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
 export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Sin adapter: usamos JWT puro con CredentialsProvider (no necesita persistir sesiones en BD)
   providers: [
     CredentialsProvider({
       name: "credentials",

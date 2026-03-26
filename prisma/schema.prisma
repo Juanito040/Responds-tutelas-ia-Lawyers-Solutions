@@ -106,6 +106,10 @@ model Caso {
   fechaLimite       DateTime // calculado: 10 días hábiles
   diasRestantes     Int?
 
+  // Auto del juzgado (texto extraído del PDF del auto admisorio)
+  autoJuzgado     String?  @db.Text
+  autoJuzgadoNombre String? // nombre del archivo original
+
   // Estado
   estado   EstadoCaso @default(PENDIENTE)
   isActive Boolean    @default(true)

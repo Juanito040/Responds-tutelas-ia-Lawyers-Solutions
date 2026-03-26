@@ -81,7 +81,7 @@ export default function NuevoCasoPage() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/casos" className="btn-ghost btn p-2"><ArrowLeft className="w-4 h-4" /></Link>
+   
         <div>
           <h2 className="page-title">Nueva tutela</h2>
           <p className="page-subtitle">Registra los datos para generar la contestación con IA</p>

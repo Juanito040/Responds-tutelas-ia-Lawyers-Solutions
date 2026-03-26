@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import SessionProvider from "@/components/providers/SessionProvider";
 
 export const metadata = {
-  title: "TutelaIA — Contestación de tutelas con Inteligencia Artificial",
+  title: "TutelaIA",
   description: "Software jurídico para agilizar la contestación de acciones de tutela en Colombia",
 };
 
