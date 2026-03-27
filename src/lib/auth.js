@@ -51,7 +51,19 @@ export const authOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge:   7 * 24 * 60 * 60, // 7 días
+    maxAge:   8 * 60 * 60, // 8 horas máximo por inactividad
+  },
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // Sin 'maxAge' ni 'expires' → cookie de sesión, se borra al cerrar el navegador
+      },
+    },
   },
   callbacks: {
     async jwt({ token, user }) {

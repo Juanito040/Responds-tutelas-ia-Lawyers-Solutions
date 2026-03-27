@@ -90,6 +90,7 @@ export default withAuth(
 // Aplicar middleware a rutas protegidas Y rutas de API que necesitan rate limiting
 export const config = {
   matcher: [
+    "/inicio",
     "/dashboard/:path*",
     "/casos/:path*",
     "/contestacion/:path*",

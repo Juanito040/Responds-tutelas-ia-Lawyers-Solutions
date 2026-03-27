@@ -3,13 +3,14 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Loader2, Scale } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm]       = useState({ email: "", password: "" });
   const [errors, setErrors]   = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -40,7 +41,8 @@ export default function LoginPage() {
       // Mensaje genérico — no revelar si el correo existe (security-audit)
       setServerError("Correo o contraseña incorrectos");
     } else {
-      router.push("/dashboard");
+      setRedirecting(true);
+      router.push("/inicio");
       router.refresh();
     }
   }
@@ -49,6 +51,22 @@ export default function LoginPage() {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+  }
+
+  if (redirecting) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white gap-6">
+        <div className="relative flex items-center justify-center w-20 h-20">
+          <div className="absolute inset-0 rounded-full border-4 border-primary-100" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-primary-500 animate-spin" />
+          <Scale className="w-8 h-8 text-primary-500" />
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-semibold text-primary-700">Bienvenido a TutelaIA</p>
+          <p className="text-sm text-muted mt-1">Cargando tu espacio de trabajo...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

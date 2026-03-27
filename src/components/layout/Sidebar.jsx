@@ -2,10 +2,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Scale, LayoutDashboard, FolderOpen, PlusCircle, LogOut, Loader2 } from "lucide-react";
+import { Scale, LayoutDashboard, FolderOpen, PlusCircle, LogOut, Loader2, Home } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const NAV = [
+  { href: "/inicio",        label: "Inicio",        icon: Home },
   { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard },
   { href: "/casos",         label: "Mis tutelas",   icon: FolderOpen },
   { href: "/casos/nuevo",   label: "Nueva tutela",  icon: PlusCircle },
@@ -36,7 +37,11 @@ export default function Sidebar({ user }) {
       {/* Navegación */}
       <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Menú principal">
         {NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+          const active = pathname === href || (
+            href !== "/dashboard" &&
+            pathname.startsWith(href) &&
+            !(href === "/casos" && pathname.startsWith("/casos/nuevo"))
+          );
           return (
             <Link
               key={href}
