@@ -2,7 +2,8 @@
 // db-testing skill: índices en FK y búsquedas, soft delete, campos audit
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
