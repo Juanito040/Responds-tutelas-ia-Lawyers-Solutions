@@ -180,8 +180,8 @@ export async function POST(request) {
         juzgado:           datos.juzgado           ?? "",
         radicado:          datos.radicado          ?? "",
         fechaNotificacion: datos.fechaNotificacion ?? "",
-        hechos:            datos.hechos            ?? "",
-        derechosInvocados: datos.derechosInvocados ?? "",
+        hechos:            Array.isArray(datos.hechos)            ? datos.hechos.join("\n")            : (datos.hechos            ?? ""),
+        derechosInvocados: Array.isArray(datos.derechosInvocados) ? datos.derechosInvocados.join("\n") : (datos.derechosInvocados ?? ""),
         camposEncontrados: datos.camposEncontrados ?? [],
       },
     });
