@@ -2,40 +2,67 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// Rate limiter en memoria — simple, para instancia única
-// En producción multi-instancia usar Redis (Upstash)
+// ─── Rate limiter en memoria ──────────────────────────────────────────────────
+// Para producción multi-instancia migrar a Upstash Redis.
+// Se usa clave compuesta ip:ruta para separar límites por endpoint.
 const rateMap = new Map();
+let lastCleanup = Date.now();
 
-function rateLimit(ip, windowMs = 60_000, max = 10) {
+// Límites por tipo de ruta (req/min)
+const LIMITS = {
+  auth:    10,   // login / registro — evita brute force
+  ai:       5,   // extracción PDF + generar contestación — costo API
+  default: 60,   // resto de rutas autenticadas
+};
+
+function getLimit(pathname) {
+  if (pathname.includes("register") || pathname.includes("callback")) return LIMITS.auth;
+  if (pathname.includes("extraer") || pathname.includes("generar-contestacion")) return LIMITS.ai;
+  return LIMITS.default;
+}
+
+function rateLimit(key, windowMs, max) {
   const now = Date.now();
-  const entry = rateMap.get(ip) || { count: 0, resetAt: now + windowMs };
+
+  // Limpiar entradas expiradas cada 5 minutos para evitar fuga de memoria
+  if (now - lastCleanup > 5 * 60_000) {
+    for (const [k, v] of rateMap) {
+      if (now > v.resetAt) rateMap.delete(k);
+    }
+    lastCleanup = now;
+  }
+
+  const entry = rateMap.get(key) ?? { count: 0, resetAt: now + windowMs };
 
   if (now > entry.resetAt) {
-    entry.count = 0;
+    entry.count  = 0;
     entry.resetAt = now + windowMs;
   }
 
   entry.count++;
-  rateMap.set(ip, entry);
+  rateMap.set(key, entry);
 
   return entry.count > max;
+}
+
+function getIp(req) {
+  // Confiar solo en el primer IP de x-forwarded-for (Vercel lo setea correctamente)
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
 
-    // Rate limiting para rutas de autenticación — 10 intentos/minuto por IP
-    if (pathname.startsWith("/api/auth/") || pathname.startsWith("/api/casos")) {
-      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-        || req.headers.get("x-real-ip")
-        || "unknown";
+    if (pathname.startsWith("/api/auth/") || pathname.startsWith("/api/casos") || pathname.startsWith("/api/contestaciones")) {
+      const ip    = getIp(req);
+      const max   = getLimit(pathname);
+      // Clave ip+ruta para límites independientes por endpoint
+      const key   = `${ip}:${pathname.split("/").slice(0, 4).join("/")}`;
 
-      // Límite más estricto en login/registro
-      const isAuthRoute = pathname.includes("callback") || pathname.includes("register");
-      const maxReq = isAuthRoute ? 10 : 60;
-
-      if (rateLimit(ip, 60_000, maxReq)) {
+      if (rateLimit(key, 60_000, max)) {
         return NextResponse.json(
           { success: false, error: { code: "RATE_LIMIT", message: "Demasiadas solicitudes. Espera un minuto." } },
           { status: 429, headers: { "Retry-After": "60" } }

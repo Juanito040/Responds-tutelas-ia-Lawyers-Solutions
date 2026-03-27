@@ -34,7 +34,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",                // Tailwind inline styles
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com", // APIs de IA
+      "connect-src 'self' https://api.groq.com https://api.resend.com", // APIs externas
       "frame-ancestors 'none'",
     ].join("; "),
   },

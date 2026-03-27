@@ -1,11 +1,12 @@
 // POST /api/casos/:id/generar-contestacion
-// Motor principal de IA — llama a Gemini y guarda el borrador
+// Motor principal de IA — llama a Groq y guarda el borrador
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generarContestacion } from "@/lib/gemini";
+import { enviarContestacionGenerada } from "@/lib/email";
 
 export async function POST(request, { params }) {
   try {
@@ -57,18 +58,24 @@ export async function POST(request, { params }) {
       data:  { estado: "EN_PROCESO" },
     });
 
+    // Enviar email de notificación (sin bloquear la respuesta si falla)
+    enviarContestacionGenerada({
+      email:          session.user.email,
+      caso,
+      contestacionId: contestacion.id,
+    }).catch(err => console.warn("[email] No se pudo enviar notificación:", err.message));
+
     return NextResponse.json({
       success: true,
-      data: { contestacionId: contestacion.id, tokensUsados, version: contestacion.version },
+      data: { contestacionId: contestacion.id, version: contestacion.version },
       message: "Contestación generada correctamente",
     });
 
   } catch (error) {
     console.error("[POST /api/casos/:id/generar-contestacion]", error);
 
-    // Diferenciar tipo de error de Gemini
     const isRateLimit = error.status === 429 || error.message?.includes("Too Many Requests") || error.message?.includes("quota");
-    const isGeminiError = error.message?.includes("GoogleGenerativeAI") || error.message?.includes("API");
+    const isAiError   = error.message?.includes("Groq") || error.message?.includes("API");
 
     let message = "Error interno del servidor";
     let code = "SERVER_ERROR";
@@ -76,7 +83,7 @@ export async function POST(request, { params }) {
     if (isRateLimit) {
       code = "RATE_LIMIT";
       message = "Límite de solicitudes a la IA alcanzado. Espera un momento e intenta nuevamente.";
-    } else if (isGeminiError) {
+    } else if (isAiError) {
       code = "AI_ERROR";
       message = "Error al conectar con el servicio de IA. Verifica la configuración e intenta nuevamente.";
     }
