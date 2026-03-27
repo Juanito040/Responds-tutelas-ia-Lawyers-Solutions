@@ -19,9 +19,7 @@ function createPrismaClient() {
     max: 10,
     // En producción validamos el certificado SSL; en desarrollo lo omitimos
     // porque Supabase pooler usa cert de AWS que en algunos entornos locales no resuelve
-    ssl: process.env.NODE_ENV === "production"
-      ? true
-      : { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false },
   });
 
   const adapter = new PrismaPg(pool);
