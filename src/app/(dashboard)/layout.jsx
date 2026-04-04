@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import NavigationProgress from "@/components/layout/NavigationProgress";
+import PageTransition from "@/components/layout/PageTransition";
 
 export default async function DashboardLayout({ children }) {
   const session = await getServerSession(authOptions);
@@ -10,15 +11,15 @@ export default async function DashboardLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      <NavigationProgress />
       <Sidebar user={session.user} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header user={session.user} />
-        <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto" style={{ marginLeft: "256px" }}>
+        <PageTransition style={{ padding: "24px 24px 80px" }}>
           <div className="max-w-container mx-auto">
             {children}
           </div>
-        </main>
-      </div>
+        </PageTransition>
+      </main>
     </div>
   );
 }

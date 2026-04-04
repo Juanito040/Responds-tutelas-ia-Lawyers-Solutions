@@ -1,30 +1,30 @@
 "use client";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Bell, X, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const TITLES = {
-  "/dashboard":  "Dashboard",
-  "/casos":      "Mis tutelas",
-  "/casos/nuevo":"Nueva tutela",
+  "/dashboard":   "Dashboard",
+  "/casos":       "Mis tutelas",
+  "/casos/nuevo": "Nueva tutela",
+  "/inicio":      "Inicio",
 };
 
 const LABEL_TIPO = {
-  SALUD:"Salud", TRABAJO:"Trabajo", EDUCACION:"Educación", PENSION:"Pensión",
-  VIVIENDA:"Vivienda", DEBIDO_PROCESO:"Debido proceso", INTIMIDAD:"Intimidad",
-  IGUALDAD:"Igualdad", OTRO:"Otro",
+  SALUD: "Salud", TRABAJO: "Trabajo", EDUCACION: "Educación", PENSION: "Pensión",
+  VIVIENDA: "Vivienda", DEBIDO_PROCESO: "Debido proceso", INTIMIDAD: "Intimidad",
+  IGUALDAD: "Igualdad", OTRO: "Otro",
 };
 
 function urgenciaConfig(dias) {
-  if (dias <= 0)  return { color: "text-red-700",    bg: "bg-red-50",    border: "border-red-200",    icon: AlertTriangle, label: "Vencida",           dot: "bg-red-500" };
-  if (dias <= 3)  return { color: "text-red-600",    bg: "bg-red-50",    border: "border-red-200",    icon: AlertTriangle, label: `${dias}d hábiles`,  dot: "bg-red-500" };
-  return          { color: "text-yellow-700",  bg: "bg-yellow-50", border: "border-yellow-200", icon: Clock,          label: `${dias}d hábiles`,  dot: "bg-yellow-400" };
+  if (dias <= 0) return { color: "#b91c1c", bg: "#fef2f2", border: "#fecaca", icon: AlertTriangle, label: "Vencida" };
+  if (dias <= 3) return { color: "#b91c1c", bg: "#fef2f2", border: "#fecaca", icon: AlertTriangle, label: `${dias}d hábiles` };
+  return         { color: "#92400e", bg: "#fffbeb", border: "#fde68a", icon: Clock,          label: `${dias}d hábiles` };
 }
 
 export default function Header({ user }) {
   const pathname = usePathname();
-  const router   = useRouter();
   const dropRef  = useRef(null);
 
   const [open, setOpen]       = useState(false);
@@ -35,14 +35,13 @@ export default function Header({ user }) {
     pathname === path || (path !== "/dashboard" && pathname.startsWith(path))
   )?.[1] ?? "TutelaIA";
 
-  // Cargar alertas al montar y cada 5 minutos
   useEffect(() => {
     async function cargar() {
       try {
         const res  = await fetch("/api/casos/alertas");
         const data = await res.json();
         if (data.success) setAlertas(data.data);
-      } catch { /* silenciar errores de red */ }
+      } catch { /* silenciar */ }
       setLoaded(true);
     }
     cargar();
@@ -50,7 +49,6 @@ export default function Header({ user }) {
     return () => clearInterval(id);
   }, []);
 
-  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     function handler(e) {
       if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false);
@@ -59,7 +57,6 @@ export default function Header({ user }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Recargar alertas cuando cambia la ruta
   useEffect(() => {
     fetch("/api/casos/alertas")
       .then(r => r.json())
@@ -70,66 +67,93 @@ export default function Header({ user }) {
   const count = alertas.length;
 
   return (
-    <header className="bg-white border-b border-border px-6 py-3 flex items-center justify-between shrink-0">
-      <h1 className="text-lg font-semibold text-primary-500">{title}</h1>
+    <header style={{
+      background: "#D8D2CA",
+      borderBottom: "1px solid #D8D2CA",
+      padding: "0 24px",
+      height: "52px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexShrink: 0,
+    }}>
+      <div />
 
-      <div className="flex items-center gap-3">
+      <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
 
-        {/* ── Campana de notificaciones ─────────────────────────────── */}
-        <div className="relative" ref={dropRef}>
+
+        {/* Campana */}
+        <div style={{ position: "relative" }} ref={dropRef}>
           <button
             aria-label="Notificaciones"
             onClick={() => setOpen(o => !o)}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors relative"
+            style={{
+              width: "42px", height: "42px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "none", border: "none", cursor: "pointer",
+              borderRadius: "3px", position: "relative",
+              transition: "background 0.15s",
+            }}
           >
-            <Bell className={`w-4 h-4 ${count > 0 ? "text-red-500" : "text-muted"}`} />
+            <Bell style={{ width: "30px", height: "40px", color: count > 0 ? "#C0392B" : "#7A7268" }} />
             {loaded && count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+              <span style={{
+                position: "absolute", top: "-2px", right: "-2px",
+                width: "16px", height: "16px",
+                background: "#C0392B", color: "#D8D2CA",
+                borderBottom: "1px solid #332f2aff",
+                fontSize: "10px", fontWeight: 700,
+                borderRadius: "9999px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                lineHeight: 1,
+              }}>
                 {count > 9 ? "9+" : count}
               </span>
             )}
           </button>
 
-          {/* Dropdown */}
           {open && (
-            <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-xl border border-border z-50 overflow-hidden">
+            <div style={{
+              position: "absolute", right: 0, top: "40px",
+              width: "300px", background: "#e0dcd7ff",
+              border: "1px solid #D8D2CA",
+              boxShadow: "0 6px 24px rgba(0,0,0,0.10)",
+              zIndex: 50,
+            }}>
               {/* Header dropdown */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gray-50">
-                <span className="text-sm font-semibold text-primary-500">
-                  {count > 0 ? `${count} alerta${count > 1 ? "s" : ""} de vencimiento` : "Sin alertas"}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #D8D2CA", background: "#F7F3EE" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268" }}>
+                  {count > 0 ? `${count} alerta${count > 1 ? "s" : ""}` : "Sin alertas"}
                 </span>
-                <button onClick={() => setOpen(false)} className="text-muted hover:text-primary-500">
-                  <X className="w-4 h-4" />
+                <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7268" }}>
+                  <X style={{ width: "14px", height: "14px" }} />
                 </button>
               </div>
 
-              {/* Lista de alertas */}
               {count === 0 ? (
-                <div className="p-6 text-center">
-                  <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                  <p className="text-sm text-muted">Todos los casos están al día.</p>
+                <div style={{ padding: "24px", textAlign: "center" }}>
+                  <CheckCircle2 style={{ width: "28px", height: "28px", color: "#27AE60", margin: "0 auto 8px" }} />
+                  <p style={{ fontSize: "13px", color: "#7A7268" }}>Todos los casos están al día.</p>
                 </div>
               ) : (
-                <ul className="max-h-72 overflow-y-auto divide-y divide-border">
+                <ul style={{ maxHeight: "280px", overflowY: "auto", listStyle: "none", margin: 0, padding: 0 }}>
                   {alertas.map(alerta => {
-                    const cfg = urgenciaConfig(alerta.diasRestantes);
+                    const cfg  = urgenciaConfig(alerta.diasRestantes);
                     const Icon = cfg.icon;
                     return (
-                      <li key={alerta.id}>
+                      <li key={alerta.id} style={{ borderBottom: "1px solid #F0EBE4" }}>
                         <Link
                           href={`/casos/${alerta.id}`}
                           onClick={() => setOpen(false)}
-                          className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors`}
+                          style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 16px", textDecoration: "none", transition: "background 0.1s" }}
                         >
-                          <div className={`mt-0.5 p-1.5 rounded-full ${alerta.diasRestantes <= 3 ? "bg-red-100" : "bg-yellow-100"}`}>
-                            <Icon className={`w-3.5 h-3.5 ${cfg.color}`} />
+                          <Icon style={{ width: "14px", height: "14px", color: cfg.color, marginTop: "2px", flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A18", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{alerta.accionante}</p>
+                            <p style={{ fontSize: "11px", color: "#7A7268", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>vs. {alerta.accionado}</p>
+                            <p style={{ fontSize: "11px", color: "#7A7268", marginTop: "2px" }}>{LABEL_TIPO[alerta.tipoTutela]}</p>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-primary-500 truncate">{alerta.accionante}</p>
-                            <p className="text-xs text-muted truncate">vs. {alerta.accionado}</p>
-                            <p className="text-xs text-muted mt-0.5">{LABEL_TIPO[alerta.tipoTutela]}</p>
-                          </div>
-                          <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
+                          <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, padding: "3px 8px", background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
                             {cfg.label}
                           </span>
                         </Link>
@@ -139,15 +163,10 @@ export default function Header({ user }) {
                 </ul>
               )}
 
-              {/* Footer */}
               {count > 0 && (
-                <div className="px-4 py-3 border-t border-border bg-gray-50">
-                  <Link
-                    href="/casos"
-                    onClick={() => setOpen(false)}
-                    className="text-xs text-primary-500 hover:underline font-medium"
-                  >
-                    Ver todos los casos →
+                <div style={{ padding: "10px 16px", borderTop: "1px solid #D8D2CA", background: "#F7F3EE" }}>
+                  <Link href="/casos" onClick={() => setOpen(false)} style={{ fontSize: "12px", color: "#1B3528", fontWeight: 600, textDecoration: "none" }}>
+                    Ver todos los casos 
                   </Link>
                 </div>
               )}
@@ -155,12 +174,6 @@ export default function Header({ user }) {
           )}
         </div>
 
-        {/* Avatar usuario */}
-        <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-          <span className="text-white text-xs font-bold">
-            {user?.name?.charAt(0).toUpperCase()}
-          </span>
-        </div>
       </div>
     </header>
   );

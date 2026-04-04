@@ -50,4 +50,7 @@ next-env.d.ts
 # ─── VERCEL ──────────────────────────────────────────────────────────────────
 .vercel
 
-.vercel
+# ─── ARCHIVOS PRIVADOS DEL PROYECTO ──────────────────────────────────────────
+prisma/seed.js
+public/Fondo.png
+src/lib/gemini.js

@@ -1,25 +1,65 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { PlusCircle, Search, Filter } from "lucide-react";
+import { PlusCircle, Search, ArrowRight } from "lucide-react";
 import { signOut } from "next-auth/react";
 import DiasRestantesBadge from "@/components/ui/DiasRestantesBadge";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import CasosSkeleton from "@/components/ui/CasosSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 
-const ESTADOS  = ["", "PENDIENTE", "EN_PROCESO", "CONTESTADA", "VENCIDA"];
-const TIPOS    = ["", "SALUD", "TRABAJO", "EDUCACION", "PENSION", "VIVIENDA", "DEBIDO_PROCESO", "OTRO"];
+const ESTADOS = ["", "PENDIENTE", "EN_PROCESO", "CONTESTADA", "VENCIDA"];
+const TIPOS   = ["", "SALUD", "TRABAJO", "EDUCACION", "PENSION", "VIVIENDA", "DEBIDO_PROCESO", "OTRO"];
 const LABEL_ESTADO = { PENDIENTE: "Pendiente", EN_PROCESO: "En proceso", CONTESTADA: "Contestada", VENCIDA: "Vencida" };
 const LABEL_TIPO   = { SALUD: "Salud", TRABAJO: "Trabajo", EDUCACION: "Educación", PENSION: "Pensión", VIVIENDA: "Vivienda", DEBIDO_PROCESO: "Debido proceso", OTRO: "Otro" };
 
+const ESTADO_COLOR = {
+  PENDIENTE:  { color: "#92400e", bg: "#fffbeb" },
+  EN_PROCESO: { color: "#1e40af", bg: "#eff6ff" },
+  CONTESTADA: { color: "#166534", bg: "#f0fdf4" },
+  VENCIDA:    { color: "#991b1b", bg: "#fef2f2" },
+};
+
+const T = {
+  ink:    "#1A1A18",
+  green:  "#1B3528",
+  border: "#D8D2CA",
+  muted:  "#7A7268",
+  light:  "#A89E93",
+  bg:     "#F7F3EE",
+};
+
+function UrgencyDot({ dias }) {
+  const color = dias <= 0 ? "#9CA3AF"
+    : dias <= 3 ? "#C0392B"
+    : dias <= 5 ? "#F39C12"
+    : "#27AE60";
+  return <div style={{ width: "8px", height: "8px", borderRadius: "9999px", background: color, flexShrink: 0 }} />;
+}
+
+function EstadoBadge({ estado }) {
+  const cfg = ESTADO_COLOR[estado] || { color: T.muted, bg: T.bg };
+  return (
+    <span style={{
+      fontSize: "11px", fontWeight: 600,
+      padding: "2px 8px",
+      background: cfg.bg, color: cfg.color,
+      border: `1px solid ${cfg.color}22`,
+      letterSpacing: "0.04em",
+      flexShrink: 0,
+    }}>
+      {LABEL_ESTADO[estado] || estado}
+    </span>
+  );
+}
+
 export default function CasosPage() {
-  const [casos, setCasos]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState("");
-  const [estado, setEstado]     = useState("");
-  const [tipo, setTipo]         = useState("");
-  const [pagination, setPag]    = useState(null);
-  const [page, setPage]         = useState(1);
+  const [casos, setCasos]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState("");
+  const [estado, setEstado]   = useState("");
+  const [tipo, setTipo]       = useState("");
+  const [pagination, setPag]  = useState(null);
+  const [page, setPage]       = useState(1);
 
   const fetchCasos = useCallback(async () => {
     setLoading(true);
@@ -30,124 +70,225 @@ export default function CasosPage() {
       if (tipo)   params.set("tipo", tipo);
 
       const res = await fetch(`/api/casos?${params}`);
-      if (res.status === 401) {
-        signOut({ callbackUrl: "/login" });
-        return;
-      }
+      if (res.status === 401) { signOut({ callbackUrl: "/login" }); return; }
       const data = await res.json();
-      if (data.success) {
-        setCasos(data.data);
-        setPag(data.pagination);
-      }
-    } catch {
-      // error de red — spinner se detiene, lista queda vacía
-    } finally {
-      setLoading(false);
-    }
+      if (data.success) { setCasos(data.data); setPag(data.pagination); }
+    } catch { /* error de red */ } finally { setLoading(false); }
   }, [page, search, estado, tipo]);
 
   useEffect(() => { fetchCasos(); }, [fetchCasos]);
 
-  // Debounce del buscador
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); fetchCasos(); }, 400);
     return () => clearTimeout(t);
   }, [search]); // eslint-disable-line
 
-  return (
-    <div className="space-y-4">
-      {/* Acciones y filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex gap-2 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-1 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-            <input
-              type="text"
-              placeholder="Buscar por accionante, accionado o radicado..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="input pl-9"
-            />
-          </div>
-        </div>
-        <Link href="/casos/nuevo" className="btn-primary btn shrink-0">
-          <PlusCircle className="w-4 h-4" /> Nueva tutela
-        </Link>
-      </div>
+  const hasFilters = estado || tipo || search;
 
-      {/* Filtros */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <Filter className="w-4 h-4 text-muted" />
-        <select value={estado} onChange={e => { setEstado(e.target.value); setPage(1); }} className="input w-auto text-sm py-1.5">
-          <option value="">Todos los estados</option>
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: T.ink }}>
+
+      {/* ── Cabecera ─────────────────────────────────────────────── */}
+      <section style={{
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+        paddingBottom: "24px", borderBottom: `1px solid ${T.border}`,
+        marginBottom: "0", gap: "16px", flexWrap: "wrap",
+      }}>
+        <div>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: T.light, marginBottom: "6px" }}>
+            Gestión
+          </p>
+          <h1 style={{
+            fontFamily: "'Cormorant Garant', serif",
+            fontSize: "clamp(28px, 3vw, 40px)",
+            fontWeight: 700, lineHeight: 1.1, color: T.ink,
+          }}>
+            Mis tutelas
+          </h1>
+        </div>
+
+        <Link
+          href="/casos/nuevo"
+          className="press"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: T.green, color: "#fff",
+            padding: "11px 22px", fontSize: "13px", fontWeight: 600,
+            textDecoration: "none", flexShrink: 0,
+          }}
+        >
+          <PlusCircle style={{ width: "14px", height: "14px" }} />
+          Nueva tutela
+        </Link>
+      </section>
+
+      {/* ── Barra de búsqueda y filtros ──────────────────────────── */}
+      <section style={{
+        display: "grid",
+        gridTemplateColumns: "1fr auto auto auto",
+        alignItems: "center",
+        gap: "10px",
+        padding: "16px 0",
+        borderBottom: `1px solid ${T.border}`,
+      }}>
+        {/* Buscador */}
+        <div style={{ position: "relative" }}>
+          <Search style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: T.muted, pointerEvents: "none" }} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, accionado..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", height: "36px",
+              paddingLeft: "34px", paddingRight: "12px",
+              border: `1px solid ${T.border}`,
+              background: "#fff", fontSize: "13px", color: T.ink,
+              outline: "none", fontFamily: "'DM Sans', sans-serif",
+              transition: "border-color 0.15s",
+            }}
+            onFocus={e  => e.target.style.borderColor = T.green}
+            onBlur={e   => e.target.style.borderColor = T.border}
+          />
+        </div>
+
+        {/* Filtro estado */}
+        <select
+          value={estado}
+          onChange={e => { setEstado(e.target.value); setPage(1); }}
+          style={{ height: "36px", padding: "0 10px", border: `1px solid ${T.border}`, background: "#fff", fontSize: "12px", color: estado ? T.ink : T.muted, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none" }}
+        >
+          <option value="">Estado</option>
           {ESTADOS.slice(1).map(e => <option key={e} value={e}>{LABEL_ESTADO[e]}</option>)}
         </select>
-        <select value={tipo} onChange={e => { setTipo(e.target.value); setPage(1); }} className="input w-auto text-sm py-1.5">
-          <option value="">Todos los tipos</option>
+
+        {/* Filtro tipo */}
+        <select
+          value={tipo}
+          onChange={e => { setTipo(e.target.value); setPage(1); }}
+          style={{ height: "36px", padding: "0 10px", border: `1px solid ${T.border}`, background: "#fff", fontSize: "12px", color: tipo ? T.ink : T.muted, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none" }}
+        >
+          <option value="">Tipo</option>
           {TIPOS.slice(1).map(t => <option key={t} value={t}>{LABEL_TIPO[t]}</option>)}
         </select>
-        {(estado || tipo || search) && (
-          <button onClick={() => { setEstado(""); setTipo(""); setSearch(""); setPage(1); }} className="btn-ghost btn text-sm py-1.5">
-            Limpiar filtros
+
+        {/* Limpiar / total */}
+        {hasFilters ? (
+          <button
+            onClick={() => { setEstado(""); setTipo(""); setSearch(""); setPage(1); }}
+            style={{ height: "36px", padding: "0 12px", fontSize: "12px", color: T.muted, background: "none", border: `1px solid ${T.border}`, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}
+          >
+            Limpiar ×
           </button>
+        ) : (
+          <span style={{ fontSize: "12px", color: T.light, whiteSpace: "nowrap", paddingLeft: "4px" }}>
+            {pagination ? `${pagination.total} tutela${pagination.total !== 1 ? "s" : ""}` : ""}
+          </span>
         )}
-      </div>
+      </section>
 
-      {/* Resultados */}
-      {loading ? (
-        <LoadingSpinner text="Cargando tutelas..." />
-      ) : casos.length === 0 ? (
-        <EmptyState
-          title="No hay tutelas"
-          description="Registra tu primera tutela para comenzar a usar TutelaIA."
-          actionLabel="Registrar tutela"
-          actionHref="/casos/nuevo"
-        />
-      ) : (
-        <div className="space-y-2">
-          {pagination && (
-            <p className="text-xs text-muted">{pagination.total} tutela{pagination.total !== 1 ? "s" : ""} encontrada{pagination.total !== 1 ? "s" : ""}</p>
-          )}
-          {casos.map(caso => (
-            <Link key={caso.id} href={`/casos/${caso.id}`} className="card flex items-center gap-4 hover:shadow-md transition-shadow group">
-              {/* Indicador de urgencia */}
-              <div className={`w-1 self-stretch rounded-full shrink-0 ${
-                caso.diasRestantes <= 0 ? "bg-gray-400"
-                : caso.diasRestantes <= 3 ? "bg-red-500"
-                : caso.diasRestantes <= 5 ? "bg-yellow-400"
-                : "bg-green-400"
-              }`} />
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-primary-500 truncate group-hover:text-accent-500 transition-colors">
-                      {caso.accionante}
-                    </p>
-                    <p className="text-sm text-muted truncate">vs. {caso.accionado}</p>
-                  </div>
-                  <DiasRestantesBadge dias={caso.diasRestantes} />
-                </div>
-                <div className="flex items-center gap-3 mt-2 text-xs text-muted">
-                  <span className="badge badge-progress">{LABEL_TIPO[caso.tipoTutela] || caso.tipoTutela}</span>
-                  <span>{LABEL_ESTADO[caso.estado]}</span>
-                  {caso.radicado && <span>Rad. {caso.radicado}</span>}
-                  <span>Límite: {new Date(caso.fechaLimite).toLocaleDateString("es-CO")}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-
-          {/* Paginación */}
-          {pagination && pagination.total_pages > 1 && (
-            <div className="flex justify-center gap-2 pt-2">
-              <button onClick={() => setPage(p => p - 1)} disabled={!pagination.has_prev} className="btn btn-outline btn-sm">Anterior</button>
-              <span className="text-sm text-muted py-1 px-2">Página {pagination.page} de {pagination.total_pages}</span>
-              <button onClick={() => setPage(p => p + 1)} disabled={!pagination.has_next} className="btn btn-outline btn-sm">Siguiente</button>
-            </div>
-          )}
+      {/* ── Encabezado de columnas ───────────────────────────────── */}
+      {!loading && casos.length > 0 && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "8px 1fr 160px 120px 130px 24px",
+          gap: "16px", alignItems: "center",
+          padding: "10px 0 10px 0",
+          borderBottom: `1px solid ${T.border}`,
+        }}>
+          <div />
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.light }}>Caso</span>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.light }}>Tipo</span>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.light }}>Estado</span>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.light }}>Vence</span>
+          <div />
         </div>
       )}
+
+      {/* ── Lista ─────────────────────────────────────────────────── */}
+      <section>
+        {loading ? (
+          <CasosSkeleton rows={6} />
+        ) : casos.length === 0 ? (
+          <EmptyState
+            title="No hay tutelas"
+            description="Registra tu primera tutela para comenzar a usar TutelaIA."
+            actionLabel="Registrar tutela"
+            actionHref="/casos/nuevo"
+          />
+        ) : (
+          <>
+            {casos.map((caso) => (
+              <Link
+                key={caso.id}
+                href={`/casos/${caso.id}`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "8px 1fr 160px 120px 130px 24px",
+                  gap: "16px", alignItems: "center",
+                  padding: "15px 0",
+                  borderBottom: `1px solid ${T.border}`,
+                  textDecoration: "none",
+                  transition: "padding-left 0.18s cubic-bezier(0.4,0,0.2,1), background 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.paddingLeft = "8px"; e.currentTarget.style.background = "rgba(27,53,40,0.02)"; }}
+                onMouseLeave={e => { e.currentTarget.style.paddingLeft = "0";   e.currentTarget.style.background = "transparent"; }}
+              >
+                <UrgencyDot dias={caso.diasRestantes} />
+
+                {/* Nombre */}
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: "14px", fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "2px" }}>
+                    {caso.accionante}
+                  </p>
+                  <p style={{ fontSize: "12px", color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    vs. {caso.accionado}
+                  </p>
+                </div>
+
+                {/* Tipo */}
+                <span style={{ fontSize: "12px", color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {LABEL_TIPO[caso.tipoTutela] || caso.tipoTutela}
+                </span>
+
+                {/* Estado */}
+                <EstadoBadge estado={caso.estado} />
+
+                {/* Días restantes */}
+                <DiasRestantesBadge dias={caso.diasRestantes} />
+
+                {/* Arrow */}
+                <ArrowRight style={{ width: "13px", height: "13px", color: T.light, justifySelf: "end" }} />
+              </Link>
+            ))}
+
+            {/* Paginación */}
+            {pagination && pagination.total_pages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", paddingTop: "28px" }}>
+                <button
+                  onClick={() => setPage(p => p - 1)}
+                  disabled={!pagination.has_prev}
+                  className={pagination.has_prev ? "press-outline" : ""}
+                  style={{ fontSize: "13px", color: pagination.has_prev ? T.green : T.light, background: "none", border: `1px solid ${T.border}`, padding: "7px 16px", cursor: pagination.has_prev ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  ← Anterior
+                </button>
+                <span style={{ fontSize: "12px", color: T.muted }}>
+                  {pagination.page} / {pagination.total_pages}
+                </span>
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={!pagination.has_next}
+                  className={pagination.has_next ? "press-outline" : ""}
+                  style={{ fontSize: "13px", color: pagination.has_next ? T.green : T.light, background: "none", border: `1px solid ${T.border}`, padding: "7px 16px", cursor: pagination.has_next ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

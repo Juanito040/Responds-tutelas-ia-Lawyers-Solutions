@@ -6,6 +6,11 @@ import SessionProvider from "@/components/providers/SessionProvider";
 export const metadata = {
   title: "TutelaIA",
   description: "Software jurídico para agilizar la contestación de acciones de tutela en Colombia",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default async function RootLayout({ children }) {
