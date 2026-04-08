@@ -29,14 +29,6 @@ Un cron job diario calcula los días hábiles restantes y envía un email de ale
 **Panel de gestión de casos**
 Vista centralizada con estados (Pendiente, En proceso, Contestada, Vencida), plazos y seguimiento por expediente.
 
----
-
-## Decisiones técnicas
-
-- **Protección contra prompt injection** — sanitización de patrones de ataque en el contenido de los PDFs antes de pasarlos al modelo. El texto del documento nunca viaja en el mismo mensaje que las instrucciones del sistema.
-- **Cálculo legal de plazos** — descuenta sábados y domingos para calcular exactamente los 10 días hábiles del Decreto 2591/91.
-- **Autenticación sin estado** — JWT puro, sin persistencia de sesión en base de datos. Cookie `HttpOnly + SameSite: Lax`, sesiones de 8 horas. Cada endpoint verifica que el recurso pertenezca al usuario autenticado.
-- **Multi-rol** — ABOGADO, ASISTENTE y ADMIN con autorización por recurso en cada endpoint.
 
 ---
 
